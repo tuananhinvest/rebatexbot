@@ -6,14 +6,14 @@ const GUIDES = {
   bingx: {
     en: `*How to Register a BINGX Account with 45% Fee Rebate*\n\n` +
       `*Case 1: Already have a BingX account under another referral*\n` +
-      `↳ Register new account: https://bingxdao.com/partner/REBATEXX/\n` +
+      `↳ Register new account: https://bingxdao.com/partner/rebatex/\n` +
       `↳ After creating the new account, log in to your old one and transfer your verified identity to the new account.\n\n` +
       `*Case 2: Have a BingX account but not under any referral*\n` +
       `↳ Simply send your UID to @AlexVance\n`+
       `↳ We’ll register your UID for lifetime rebates directly.\n\n`+
       `*Case 3: Don’t have a BingX account yet*\n`+
       `↳ Just register a new account using the official Rebate X link:\n`+
-      `https://bingxdao.com/partner/REBATEXX/\n`+
+      `https://bingxdao.com/partner/rebatex/\n`+
       `↳ Then trade as usual — your rebates will be automatically tracked and paid every month.\n\n`,
     th: ``,
     id: ``,
