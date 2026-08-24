@@ -2,7 +2,7 @@ const EXCHANGES = [
   {
     id: 'bingx', name: 'BingX', market: 'crypto', rebate: '45%',
     makerFee: 0.0002, takerFee: 0.0005,
-    refLink: 'https://bingxdao.com/partner/REBATEXX/',
+    refLink: 'https://bingxdao.com/partner/rebatex/',
     mechanism: '45% of trading fees will be automatically rebated daily directly into your account'
   },
   {
@@ -31,7 +31,7 @@ const EXCHANGES = [
   },
   {
     id: 'vantage', name: 'Vantage', market: 'forex', rebate: '100%',
-    feePerLot: 6, feeCurrency: 'USD',
+    feePerLot: 11, feeCurrency: 'USD',
     refLink: 'https://www.vantagemarkets.com/?affid=YOUR_REF_CODE',
     mechanism: '*100% Commission Cashback* — We pass 100% of the partner commission generated from your trading volume back to you.'
   },
@@ -61,4 +61,39 @@ function calculateRebate(exchangeId, params = {}) {
   throw new Error(`Invalid market: ${exchange.market}`);
 }
 
-module.exports = { EXCHANGES, calculateRebate };
+/**
+ * Tính khoảng phí giao dịch và khoảng hoàn phí cho sàn crypto,
+ * dựa trên volume nhập vào, dùng cả makerFee và takerFee làm 2 đầu mút.
+ * Không cần người dùng chọn maker/taker.
+ *
+ * @param {string} exchangeId - id sàn crypto trong EXCHANGES
+ * @param {number} volume - khối lượng giao dịch (USDT)
+ * @returns {{ market: 'crypto', feeMin: number, feeMax: number, rebateMin: number, rebateMax: number, rebatePercent: number, currency: string }}
+ */
+function calculateRebateRange(exchangeId, volume) {
+  const exchange = EXCHANGES.find((e) => e.id === exchangeId);
+  if (!exchange) throw new Error(`Exchange not found: ${exchangeId}`);
+  if (exchange.market !== 'crypto') throw new Error('calculateRebateRange only applies to crypto exchanges');
+  if (!volume || volume <= 0) throw new Error('Missing or invalid volume');
+
+  const rebatePercent = parseFloat(exchange.rebate) / 100;
+
+  const ROUND_TURN_MULTIPLIER = 2; // phí tính cả lúc mở lệnh và đóng lệnh
+
+  const feeAtMaker = volume * exchange.makerFee * ROUND_TURN_MULTIPLIER;
+  const feeAtTaker = volume * exchange.takerFee * ROUND_TURN_MULTIPLIER;
+  const feeMin = Math.min(feeAtMaker, feeAtTaker);
+  const feeMax = Math.max(feeAtMaker, feeAtTaker);
+
+  return {
+    market: 'crypto',
+    feeMin,
+    feeMax,
+    rebateMin: feeMin * rebatePercent,
+    rebateMax: feeMax * rebatePercent,
+    rebatePercent: rebatePercent * 100,
+    currency: 'USDT',
+  };
+}
+
+module.exports = { EXCHANGES, calculateRebate, calculateRebateRange };

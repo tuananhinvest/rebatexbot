@@ -5,6 +5,7 @@ const { EXCHANGES } = require('./config/exchanges');
 const { getGuide } = require('./guides');
 const { t, getLang, SUPPORTED_LANGS } = require('./i18n');
 const { mainMenuKeyboard, exchangeDetailKeyboard, guideKeyboard, languageKeyboard } = require('./keyboards/mainMenu');
+const { sendMainMenu } = require('./helpers/render');
 const calculatorScene = require('./scenes/calculator');
 const { showVipSignals } = require('./handlers/vipSignals');
 const db = require('./db');
@@ -24,7 +25,27 @@ bot.use(stage.middleware());
 
 // ---------- /start ----------
 bot.start(async (ctx) => {
-  db.upsertUser(ctx.from);
+  const result = await db.addOrUpdateUser({
+    telegramId: ctx.from.id,
+    username: ctx.from.username || null,
+    name: [ctx.from.first_name, ctx.from.last_name].filter(Boolean).join(' ') || null,
+  });
+
+  if (process.env.ADMIN_CHAT_ID) {
+    const label = result.created ? '🆕 User mới' : '🔁 User quay lại';
+    const displayName = [ctx.from.first_name, ctx.from.last_name].filter(Boolean).join(' ') || 'N/A';
+    const usernameText = ctx.from.username ? `@${ctx.from.username}` : '(không có username)';
+
+    ctx.telegram
+      .sendMessage(
+        process.env.ADMIN_CHAT_ID,
+        `${label}\n` +
+          `👤 Tên: ${displayName}\n` +
+          `🔗 Username: ${usernameText}\n` +
+          `🆔 Telegram ID: ${ctx.from.id}`
+      )
+      .catch((err) => console.error('Không gửi được thông báo admin:', err.message));
+  }
 
   // Lần đầu chưa chọn ngôn ngữ -> bắt chọn trước
   if (!ctx.session.lang) {
@@ -119,14 +140,15 @@ bot.action(/GUIDE_(.+)/, async (ctx) => {
 bot.action('BACK_MAIN', async (ctx) => {
   const lang = getLang(ctx);
   await ctx.answerCbQuery();
-  await ctx.editMessageText(
-    t(lang, 'welcome', { name: ctx.from.first_name || 'trader' }),
-    {
-      parse_mode: 'Markdown',
-      disable_web_page_preview: true,
-      ...mainMenuKeyboard(lang),
-    }
-  );
+  await sendMainMenu(ctx, { edit: true });
+  //await ctx.editMessageText(
+  //  t(lang, 'welcome', { name: ctx.from.first_name || 'trader' }),
+  //  {
+  //    parse_mode: 'Markdown',
+  //    disable_web_page_preview: true,
+  //    ...mainMenuKeyboard(lang),
+  //  }
+  //);
 });
 
 // ---------- VIP SIGNALS ----------
@@ -143,8 +165,9 @@ bot.action('CALCULATOR', async (ctx) => {
 
 // ---------- Lệnh phụ trợ ----------
 bot.command('menu', async (ctx) => {
-  const lang = getLang(ctx);
-  await ctx.reply(t(lang, 'menu_prompt'), mainMenuKeyboard(lang));
+  //const lang = getLang(ctx);
+  //await ctx.reply(t(lang, 'menu_prompt'), mainMenuKeyboard(lang));
+  await sendMainMenu(ctx, { edit: false });
 });
 
 bot.help(async (ctx) => {
@@ -157,7 +180,6 @@ bot.catch((err, ctx) => {
 
 bot.launch().then(() => {
   console.log('🤖 Bot started (long polling)...');
-  console.log(`📦 Total registrations so far: ${db.countRegistrations()}`);
 });
 
 process.once('SIGINT', () => bot.stop('SIGINT'));

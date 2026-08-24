@@ -54,4 +54,12 @@ function guideKeyboard(exchangeId, lang) {
   ]);
 }
 
-module.exports = { mainMenuKeyboard, exchangeDetailKeyboard, guideKeyboard, languageKeyboard };
+// Bàn phím chung: chỉ có 1 nút Back quay về menu chính.
+// Dùng cho các màn hình "ngõ cụt" như VIP Signals, kết quả Calculator, v.v.
+function backToMainKeyboard(lang) {
+  return Markup.inlineKeyboard([
+    [Markup.button.callback(t(lang, 'back_btn'), 'BACK_MAIN')],
+  ]);
+}
+
+module.exports = { mainMenuKeyboard, exchangeDetailKeyboard, guideKeyboard, languageKeyboard, backToMainKeyboard };
